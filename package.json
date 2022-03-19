@@ -1,14 +1,12 @@
 {
   "name": "AlphaBot",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "",
   "main": "alphabot.js",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "canvas": "",
     "discord.js": "^13.3.1"
   }
 }
