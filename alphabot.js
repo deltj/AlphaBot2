@@ -1,5 +1,6 @@
 'use strict';
 
+const pjson = require('./package.json');
 const { Client, Intents } = require("discord.js");
 const fs = require('fs');
 
@@ -23,6 +24,11 @@ const raidNights = [1, 3, 5]; // Mon Wed Fri
 const nextRaid = {0: 1, 1: 3, 2: 3, 3: 5, 4: 5, 5: 1, 6: 1};
 const dayNames = {1: 'Monday', 3: 'Wednesday', 5: 'Friday', 8: 'the next three raids'};
 const ALL = 8;
+const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:'];
+
+function face() {
+    return faces[Math.floor(Math.random() * faces.length)];
+}
 
 function raidDate(specDate) {
     var date = new Date();
@@ -39,13 +45,28 @@ function raidDate(specDate) {
     return day;
 }
 
+/**
+ * Given an attempt to describe a day of the week, for example "Wednesday" or "wed",
+ * return the one-based day index.  The special value eight means all days of the week.
+ * 
+ * @param {*} text The text to analyze
+ * @returns 1-8
+ */
 function daySpec(text) {
-    if (text.includes(' mon')) {
+    if (text.includes(' sun')) {
+        return 0;
+    } else if (text.includes(' mon')) {
         return 1;
+    } else if (text.includes(' tue')) {
+        return 2;
     } else if (text.includes(' wed')) {
         return 3;
+    } else if (text.includes(' thu')) {
+        return 4;
     } else if (text.includes(' fri')) {
         return 5;
+    } else if (text.includes(' sat')) {
+        return 6;
     } else if (text.includes(' all') || text.includes(' week') ||
            (text.includes(' w') && !text.includes(' wa') && !text.includes(' wi')) || text.includes(' a')) {
         return ALL;
@@ -126,7 +147,12 @@ function signupForSlot(nick, day, slot, clear) {
         fs.writeFileSync('slots_' + day + '.log', taken.join('\n') + '\n', (err) => { 
             if (err) throw err;
         });
-        return 'Your sign-up for slot ' + (prev + 1) + ' has been cleared, ' + nick;
+
+        if(day == 8) {
+            return 'Your sign-up for slot ' + (prev + 1) + 'has been cleared, ' + nick;
+        } else {
+            return 'Your sign-up for slot ' + (prev + 1) + ' on ' + dayNames[day] + ' has been cleared, ' + nick;
+        }
     }
 
     var show = available.length;
@@ -152,7 +178,13 @@ function signupForSlot(nick, day, slot, clear) {
             fs.appendFileSync('slots_' + day + '.log', slot + ' ' + nick + '\n', (err) => {
                 if (err) throw err;
             });
-            return 'You are now signed up for slot ' + slot + ', ' + nick + ' :slight_smile:';
+
+            if(day == 8) {
+                return 'You are now signed up for slot ' + slot + ', ' + nick + face();
+            } else {
+                return 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
+            }
+            
         } 
     }
 }
@@ -190,6 +222,11 @@ async function process(message) {
                 const slot = parseInt(text.substring(text.indexOf('slot') + 4)) || 0;
 
                 channel.send(signupForSlot(nickname, day, slot, text.includes('clear')));
+            }
+
+            //  Respond to version command
+            else if (text.includes('ver')) {
+                channel.send('I am AlphaBot version ' + pjson.version + '.  Details here: https://github.com/deltj/AlphaBot2');
             }
 
             else {
