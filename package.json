@@ -5,8 +5,9 @@
   "main": "alphabot.js",
   "scripts": {},
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
+    "console-stamp": "^3.0.4",
     "discord.js": "^13.3.1"
   }
 }

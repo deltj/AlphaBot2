@@ -4,6 +4,11 @@ const pjson = require('./package.json');
 const { Client, Intents } = require("discord.js");
 const fs = require('fs');
 
+//  Add timestamps to console.log output
+require('console-stamp')(console, {
+    format: ':date(yyyy/mm/dd HH:MM:ss.l)'
+});
+
 //  The Discord client, see intent docs: https://discord.com/developers/docs/topics/gateway#list-of-intents
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES] });
 
@@ -118,12 +123,19 @@ function signupForSlot(nick, day, slot, clear) {
     var resp = '';
     var prev = '';
 
+    //  Iterate the slots that are already taken for this raid and look for a match
     for (let i = 0; i < taken.length; i++) {
-        let fields = taken[i].split(" ");
+        //  Each item in the taken array describes a slot that someone has signed up for
+        //    fields[0] is the slot number
+        //    fields[1] is the nickname of the person signed up
+        const fields = taken[i].split(" ");
 
-        //  Each entry in the slots file should have two fields (slot, member)
+        //  We expect two fields for each entry (slot, nickname)
         if (fields.length > 1) {
-            let index = parseInt(fields[0]) - 1;
+
+            //  Slot index in the mapping object is zero-based
+            const index = parseInt(fields[0]) - 1;
+
             if (!(index in mapping)) {
                 if (fields[1] == nick) {
                     if (slot > 0 || clear) {
@@ -141,7 +153,7 @@ function signupForSlot(nick, day, slot, clear) {
             }
         }
     }
-    console.log(available.length, ' slots', taken, mapping, slotlist);
+    //console.log(available.length, ' slots', taken, mapping, slotlist);
 
     if (rewrite) {
         fs.writeFileSync('slots_' + day + '.log', taken.join('\n') + '\n', (err) => { 
@@ -170,7 +182,7 @@ function signupForSlot(nick, day, slot, clear) {
         }
         return resp;
     } else {
-        console.log(slot, mapping);
+        //console.log(slot, mapping);
         let index = slot - 1;
         if (index in mapping) {
             return 'That slot is already taken :cry:';
@@ -196,6 +208,11 @@ function signupForSlot(nick, day, slot, clear) {
 async function process(message) {
     
     const channel = message.channel;
+    const user = message.member.user;
+    const member = await il_guild.members.fetch(user);
+    const nickname = member.displayName;
+
+    console.log(message.guild.name + '/' + message.channel.name + '/' + nickname + ': ' + message.content)
 
     //  Only listen to alpha channels
     if (channel.name.includes('alpha')) {
@@ -212,11 +229,7 @@ async function process(message) {
             }
         
             //  Respond to slot command
-            else if (text.includes('slot')) {
-                const user = message.member.user;
-                const member = await il_guild.members.fetch(user);
-                const nickname = member.displayName;
-            
+            else if (text.includes('slot')) {            
                 const specDate = daySpec(text);
                 const day = raidDate(specDate);
                 const slot = parseInt(text.substring(text.indexOf('slot') + 4)) || 0;
