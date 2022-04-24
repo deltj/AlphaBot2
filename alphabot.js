@@ -128,16 +128,23 @@ function signupForSlot(nick, day, slot, clear) {
         //  Each item in the taken array describes a slot that someone has signed up for
         //    fields[0] is the slot number
         //    fields[1] is the nickname of the person signed up
-        const fields = taken[i].split(" ");
+        const tokens = taken[i].split(" ");
 
-        //  We expect two fields for each entry (slot, nickname)
-        if (fields.length > 1) {
+        //  We expect (at least) two fields for each entry (slot, nickname)
+        if (tokens.length > 1) {
+
+            //  We can't simply split the file entry on the space character, because
+            //  some nicknames may include spaces.  To accommodate this we'll consider
+            //  the first token the slot number, and join all subsequent tokens to
+            //  recover the nickname
+            const takenSlot = tokens.shift();
+            const takenNick = tokens.join(" ");
 
             //  Slot index in the mapping object is zero-based
-            const index = parseInt(fields[0]) - 1;
+            const index = parseInt(takenSlot) - 1;
 
             if (!(index in mapping)) {
-                if (fields[1] == nick) {
+                if (takenNick == nick) {
                     if (slot > 0 || clear) {
                         if (!clear) {
                             return 'You are already signed up. Please use *&slot clear* to clear the existing sign-up first.';
@@ -149,7 +156,7 @@ function signupForSlot(nick, day, slot, clear) {
                         }
                     }
                 }
-                mapping[index] = (fields.slice(1, fields.length)).join(' ');       
+                mapping[index] = takenNick;
             }
         }
     }
