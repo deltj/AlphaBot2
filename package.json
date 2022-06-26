@@ -1,13 +1,19 @@
 {
   "name": "AlphaBot",
-  "version": "2.1.1",
+  "version": "2.2",
   "description": "",
   "main": "alphabot.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest"
+  },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "console-stamp": "^3.0.4",
     "discord.js": "^13.3.1"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "jest": "^28.1.1"
   }
 }

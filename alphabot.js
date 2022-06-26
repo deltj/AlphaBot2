@@ -3,6 +3,7 @@
 const pjson = require('./package.json');
 const { Client, Intents } = require("discord.js");
 const fs = require('fs');
+const { Console } = require('console');
 
 //  Add timestamps to console.log output
 require('console-stamp')(console, {
@@ -26,55 +27,107 @@ for (let i = 0; i < available.length; i++) {
 const help = '**Available commands**:' + '\n(put a & in the beginning to address the bot)\n' + '\n__slot N__ sign up to play slot N in the next raid\n__slot clear__ clear a slot that you\'ve signed up for\n__slots__ list the signups for the next raid\n';
 
 const raidNights = [1, 3, 5]; // Mon Wed Fri 
-const nextRaid = {0: 1, 1: 3, 2: 3, 3: 5, 4: 5, 5: 1, 6: 1};
-const dayNames = {1: 'Monday', 3: 'Wednesday', 5: 'Friday', 8: 'the next three raids'};
-const ALL = 8;
+//const nextRaid = {0: 1, 1: 3, 2: 3, 3: 5, 4: 5, 5: 1, 6: 1};
+const dayNames = {1: 'Monday', 3: 'Wednesday', 5: 'Friday'};
 const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:' ];
 
+/**
+ * Signups received after this hour on raid night will go to the next raid.  This 
+ * value used to be set to raid start time (currently 20:00 EST), but that doesn't
+ * allow for folks to sign up who are running late or joining at the last minute.
+ */
+const raidSignupCutoffHour = 22;
+
+/**
+ * Select a random face from the faces array
+ * @returns A discord face emoji
+ */
 function face() {
     return faces[Math.floor(Math.random() * faces.length)];
 }
 
-function raidDate(specDate) {
-    var date = new Date();
-    var weekDay = date.getDay();
-    if (raidNights.includes(weekDay)) {
-        if (date.getHours() < 20) { // before eight on a raid Night
-            weekDay = ((weekDay - 1) + 7) % 7; // sign up for today (js modulo sucks)
+/**
+ * Given a day of the week (0-6), determine the next raid day
+ * @param {*} day 
+ */
+function nextRaid(day) {
+    //  Iterate the raidNights array and find the next raid night greater than this one
+    //  Note that this assumes the raidNights array is sorted smallest-to-largest
+    for(var i=0; i<raidNights.length; i++) {
+        if(raidNights[i] > day) {
+            return raidNights[i];
         }
     }
-    var day = nextRaid[weekDay]; // default is next raid
-    if (specDate != -1) {
-        day = specDate;
-    }
-    return day;
+
+    return 1;
 }
 
 /**
- * Given an attempt to describe a day of the week, for example "Wednesday" or "wed",
- * return the one-based day index.  The special value eight means all days of the week.
+ * Determine the raid signup day.  This function should behave as follows:
+ * 
+ * If no day is provided:
+ *  -If today is a raid day and it's before the cutoff time, sign up for today
+ *  -Otherwise, sign up for the next raid
+ * 
+ * If a day is provided:
+ *  -If the provided day is today and there's a raid today and it's before the cutoff time, sign up for today
+ *  -If the provided day is not today and there's a raid that day, sign up for that day
+ *  -Otherwise, sign up for the next raid
+ * 
+ * @param {*} specDate A day of the week provided by the user (0-6)
+ * @returns The raid day to sign up for
+ */
+function raidDate(specDay) {
+    const date = new Date();
+    const currentHour = date.getHours();
+    const currentDay = date.getDay();
+
+    //  If the user provided a valid day of the week, try to process that
+    if (0 <= specDay && specDay <= 6) {
+        if (raidNights.includes(specDay)) {
+            if (specDay == currentDay) {
+                if (currentHour < raidSignupCutoffHour) {
+                    return specDay;
+                } else {
+                    return nextRaid(specDay);
+                }
+            }
+
+            return specDay;
+        }
+    }
+
+    //  If there is a raid today and it's before the cutoff, use today
+    if (raidNights.includes(currentDay) && currentHour < raidSignupCutoffHour) {
+        return currentDay;
+    } else {
+        return nextRaid(currentDay);
+    }    
+}
+
+/**
+ * Given bot command that includes an attempt to describe a day of the week,
+ * for example "Wednesday" or "wed", return the one-based day index.
  * 
  * @param {*} text The text to analyze
- * @returns 1-8
+ * @returns An integer representing the day of the week, or -1 for invalid input
  */
 function daySpec(text) {
-    if (text.includes(' sun')) {
+    var ltext = text.toLowerCase();
+    if (ltext.includes(' sun')) {
         return 0;
-    } else if (text.includes(' mon')) {
+    } else if (ltext.includes(' mon')) {
         return 1;
-    } else if (text.includes(' tue')) {
+    } else if (ltext.includes(' tue')) {
         return 2;
-    } else if (text.includes(' wed')) {
+    } else if (ltext.includes(' wed')) {
         return 3;
-    } else if (text.includes(' thu')) {
+    } else if (ltext.includes(' thu')) {
         return 4;
-    } else if (text.includes(' fri')) {
+    } else if (ltext.includes(' fri')) {
         return 5;
-    } else if (text.includes(' sat')) {
+    } else if (ltext.includes(' sat')) {
         return 6;
-    } else if (text.includes(' all') || text.includes(' week') ||
-           (text.includes(' w') && !text.includes(' wa') && !text.includes(' wi')) || text.includes(' a')) {
-        return ALL;
     }
     return -1; // none specified
 }
@@ -167,11 +220,7 @@ function signupForSlot(nick, day, slot, clear) {
             if (err) throw err;
         });
 
-        if(day == 8) {
-            return 'Your sign-up for slot ' + (prev + 1) + 'has been cleared, ' + nick;
-        } else {
-            return 'Your sign-up for slot ' + (prev + 1) + ' on ' + dayNames[day] + ' has been cleared, ' + nick;
-        }
+        return 'Your sign-up for slot ' + (prev + 1) + ' on ' + dayNames[day] + ' has been cleared, ' + nick;
     }
 
     var show = available.length;
@@ -198,12 +247,7 @@ function signupForSlot(nick, day, slot, clear) {
                 if (err) throw err;
             });
 
-            if(day == 8) {
-                return 'You are now signed up for slot ' + slot + ', ' + nick + face();
-            } else {
-                return 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
-            }
-            
+            return 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
         } 
     }
 }
@@ -291,8 +335,16 @@ client.on("ready", () => {
     il_guild = client.guilds.cache.get('191716294943440897');
 });
 
-//  Read the bot's discord token from the filesystem
-const ID = fs.readFileSync('token.txt').toString().trim();
+if(require.main == module) {
+    //  This module has been run on the command line, proceed to log in and execute the bot
 
-//  Log into discord using the token
-client.login(ID);
+    //  Read the bot's discord token from the filesystem
+    const ID = fs.readFileSync('token.txt').toString().trim();
+
+    //  Log into discord using the token
+    client.login(ID);
+} else {
+    //  This module has not been run from the command line (probably required from a unit test), export some key functions
+    module.exports = { daySpec, raidDate, nextRaid };
+}
+
