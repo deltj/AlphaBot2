@@ -38,6 +38,15 @@ const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':
  */
 const raidSignupCutoffHour = 22;
 
+//  Create raid slot files if they're missing
+for(var i=0; i<raidNights.length; i++) {
+    const slotFilename = 'slots_' + raidNights[i] + '.log';
+    if(!fs.existsSync(slotFilename)) {
+        console.log('Missing slot file for day ' + raidNights[i] + ', creating it');
+        fs.closeSync(fs.openSync(slotFilename, 'w'))
+    }
+}
+
 /**
  * Links to required builds for slots
  */
@@ -370,6 +379,13 @@ client.on("ready", () => {
 
 if(require.main == module) {
     //  This module has been run on the command line, proceed to log in and execute the bot
+
+    //  Check that the discord token file is present
+    const tokenFilename = 'token.txt';
+    if(!fs.existsSync(tokenFilename)) {
+        console.log('Missing token file, exiting');
+        process.exit(0);
+    }
 
     //  Read the bot's discord token from the filesystem
     const ID = fs.readFileSync('token.txt').toString().trim();
