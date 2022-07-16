@@ -39,6 +39,24 @@ const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':
 const raidSignupCutoffHour = 22;
 
 /**
+ * Links to required builds for slots
+ */
+const slotBuildLink = {
+    1:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=455654',
+    2:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=465516',
+    3:  '',
+    4:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=456350',
+    5:  '',
+    6:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=455344',
+    7:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=456518',
+    8:  'https://en.uesp.net/wiki/Special:EsoBuildData?id=456354',
+    9:  '',
+    10: '',
+    11: 'https://en.uesp.net/wiki/Special:EsoBuildData?id=456525',
+    12: '',
+};
+
+/**
  * Select a random face from the faces array
  * @returns A discord face emoji
  */
@@ -247,7 +265,22 @@ function signupForSlot(nick, day, slot, clear) {
                 if (err) throw err;
             });
 
-            return 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
+            var signupText = 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
+
+            const slotChannelName = 'slot-' + slot;
+            //console.log(slotChannelName);
+            const slotChannel = il_guild.channels.cache.find(channel => channel.name === slotChannelName);
+            //console.log(slotChannel);
+            if(slotChannel) {
+                signupText += '\n\nSlot discussion: ' + slotChannel.toString();
+            }
+
+            if(slotBuildLink[slot].length > 0) {
+                signupText += '\nSlot build: ' + slotBuildLink[slot];
+            }
+
+            return  signupText;
+                
         } 
     }
 }
