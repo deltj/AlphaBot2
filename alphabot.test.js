@@ -55,6 +55,12 @@ describe('daySpec', () => {
         const output = alphabot.daySpec(input);
         expect(output).toBe(-1);
     });
+
+    test('slot 11 monday', () => {
+        const input = 'slot 11 monday';
+        const output = alphabot.daySpec(input);
+        expect(output).toBe(1);
+    })
 });
 
 describe('raidDate', () => {
@@ -91,7 +97,7 @@ describe('raidDate', () => {
     });
 
     test('Monday, after cutoff', () => {
-        const testDate = new Date('03 Jan 2022 22:00:00 EST');
+        const testDate = new Date('03 Jan 2022 23:00:00 EST');
         jest.setSystemTime(testDate);
 
         const output = alphabot.raidDate();
@@ -107,11 +113,11 @@ describe('raidDate', () => {
     });
 
     test('Monday, spec=1, after cutoff', () => {
-        const testDate = new Date('03 Jan 2022 22:00:00 EST');
+        const testDate = new Date('03 Jan 2022 23:00:00 EST');
         jest.setSystemTime(testDate);
 
         const output = alphabot.raidDate(1);
-        expect(output).toBe(3);
+        expect(output).toBe(1);
     });
 
     test('Tuesday', () => {
@@ -135,7 +141,16 @@ describe('raidDate', () => {
         jest.setSystemTime(testDate);
 
         const output = alphabot.raidDate(3);
-        expect(output).toBe(5);
+        expect(output).toBe(3);
+    });
+
+    //  Bug hunting...
+    test('Monday, spec=1, after cutoff', () => {
+        const testDate = new Date('08 Aug 2022 23:44:00 EDT');
+        jest.setSystemTime(testDate);
+
+        const output = alphabot.raidDate(1);
+        expect(output).toBe(1);
     });
 });
 

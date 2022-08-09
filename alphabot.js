@@ -36,7 +36,7 @@ const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':
  * value used to be set to raid start time (currently 20:00 EST), but that doesn't
  * allow for folks to sign up who are running late or joining at the last minute.
  */
-const raidSignupCutoffHour = 22;
+const raidSignupCutoffHour = 23;
 
 //  Create raid slot files if they're missing
 for(var i=0; i<raidNights.length; i++) {
@@ -97,8 +97,7 @@ function nextRaid(day) {
  *  -Otherwise, sign up for the next raid
  * 
  * If a day is provided:
- *  -If the provided day is today and there's a raid today and it's before the cutoff time, sign up for today
- *  -If the provided day is not today and there's a raid that day, sign up for that day
+ *  -If the the provided day is a raid day, sign up for that day
  *  -Otherwise, sign up for the next raid
  * 
  * @param {*} specDate A day of the week provided by the user (0-6)
@@ -112,15 +111,9 @@ function raidDate(specDay) {
     //  If the user provided a valid day of the week, try to process that
     if (0 <= specDay && specDay <= 6) {
         if (raidNights.includes(specDay)) {
-            if (specDay == currentDay) {
-                if (currentHour < raidSignupCutoffHour) {
-                    return specDay;
-                } else {
-                    return nextRaid(specDay);
-                }
-            }
-
             return specDay;
+        } else {
+            return nextRaid(specDay);
         }
     }
 
