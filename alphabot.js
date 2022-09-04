@@ -288,6 +288,33 @@ function signupForSlot(nick, day, slot, clear) {
 }
 
 /**
+ * Generate build info for a slot
+ * 
+ * @param {*} slot An integer representing the slot of interest
+ * @returns A string containing info for the specified slot, if any is available
+ */
+ function printInfo(slot) {
+    if(1 <= slot && slot <= 12) {
+        const slotChannelName = 'slot-' + slot;
+        const slotChannel = il_guild.channels.cache.find(channel => channel.name === slotChannelName);
+
+        var signupText = 'Build info for slot ' + slot;
+
+        if(slotChannel) {
+            signupText += '\n\nSlot discussion: ' + slotChannel.toString();
+        }
+
+        if(slotBuildLink[slot].length > 0) {
+            signupText += '\nSlot build: ' + slotBuildLink[slot];
+        }
+
+        return signupText;
+    }
+
+    return "";
+ }
+
+/**
  * Process a command
  * @param {*} message 
  */
@@ -321,6 +348,18 @@ async function process(message) {
                 const slot = parseInt(text.substring(text.indexOf('slot') + 4)) || 0;
 
                 channel.send(signupForSlot(nickname, day, slot, text.includes('clear')));
+            }
+
+            //  Respond to info command
+            else if(text.includes('info')) {
+                const slot = parseInt(text.substring(text.indexOf('info') + 4)) || 0;
+                console.log('slot: ' + slot);
+
+                const info = printInfo(slot);
+                console.log('info : ' + info);
+                if(info.length > 0) {
+                    channel.send(printInfo(slot));
+                }
             }
 
             //  Respond to version command
