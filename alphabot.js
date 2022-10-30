@@ -17,7 +17,11 @@ const guilds = ['892906237799321650', '191716294943440897'];  //  test server, I
 let il_guild = undefined;
 
 const commandPrefixes = '&!';
-const available = fs.readFileSync('slots.txt').toString().trim().split('\n').filter(Boolean);
+const filePrefix = '/var/db/AlphaBot2/';
+const available = fs.readFileSync(filePrefix + 'slots.txt').toString().trim().split('\n').filter(Boolean);
+
+//  Read discord API key from the environment
+const discordToken = process.env.DISCORD_TOKEN;
 
 var slotlist = 'The **Alpha Squad** slots are:\n';
 for (let i = 0; i < available.length; i++) {
@@ -40,7 +44,7 @@ const raidSignupCutoffHour = 23;
 
 //  Create raid slot files if they're missing
 for(var i=0; i<raidNights.length; i++) {
-    const slotFilename = 'slots_' + raidNights[i] + '.log';
+    const slotFilename = filePrefix + 'slots_' + raidNights[i] + '.log';
     if(!fs.existsSync(slotFilename)) {
         console.log('Missing slot file for day ' + raidNights[i] + ', creating it');
         fs.closeSync(fs.openSync(slotFilename, 'w'))
@@ -189,7 +193,7 @@ function signupForSlot(nick, day, slot, clear) {
     //  The format of the slots file is: <N> <member>
     //  Where N is a slot number (1-12) and member is the name of the person who
     //  signed up.  They are separated by a single space.
-    let taken = fs.readFileSync('slots_' + day + '.log').toString().trim().split('\n').filter(Boolean);
+    let taken = fs.readFileSync(filePrefix + 'slots_' + day + '.log').toString().trim().split('\n').filter(Boolean);
 
     var mapping = {};
     var rewrite = false;
@@ -236,7 +240,7 @@ function signupForSlot(nick, day, slot, clear) {
     //console.log(available.length, ' slots', taken, mapping, slotlist);
 
     if (rewrite) {
-        fs.writeFileSync('slots_' + day + '.log', taken.join('\n') + '\n', (err) => { 
+        fs.writeFileSync(filePrefix + 'slots_' + day + '.log', taken.join('\n') + '\n', (err) => { 
             if (err) throw err;
         });
 
@@ -263,7 +267,7 @@ function signupForSlot(nick, day, slot, clear) {
         if (index in mapping) {
             return 'That slot is already taken :cry:';
         } else {
-            fs.appendFileSync('slots_' + day + '.log', slot + ' ' + nick + '\n', (err) => {
+            fs.appendFileSync(filePrefix + 'slots_' + day + '.log', slot + ' ' + nick + '\n', (err) => {
                 if (err) throw err;
             });
 
@@ -291,7 +295,7 @@ function signupForSlot(nick, day, slot, clear) {
  * Process a command
  * @param {*} message 
  */
-async function process(message) {
+async function processCommand(message) {
     
     const channel = message.channel;
     const user = message.member.user;
@@ -350,7 +354,7 @@ client.on("messageCreate", (message) => {
 
         //  Handle commands
         if (commandPrefixes.includes(message.content.trim().at(0))) {
-            process(message);
+            processCommand(message);
         }
     
         //  Handle Alpaca messages 
@@ -373,18 +377,16 @@ client.on("ready", () => {
 if(require.main == module) {
     //  This module has been run on the command line, proceed to log in and execute the bot
 
-    //  Check that the discord token file is present
-    const tokenFilename = 'token.txt';
-    if(!fs.existsSync(tokenFilename)) {
-        console.log('Missing token file, exiting');
+    //  Check that the discord token is present
+    if(discordToken.length == 0) {
+        console.log('Missing discord token, exiting');
         process.exit(0);
     }
 
-    //  Read the bot's discord token from the filesystem
-    const ID = fs.readFileSync('token.txt').toString().trim();
+    console.log(discordToken);
 
     //  Log into discord using the token
-    client.login(ID);
+    client.login(discordToken);
 } else {
     //  This module has not been run from the command line (probably required from a unit test), export some key functions
     module.exports = { daySpec, raidDate, nextRaid };
