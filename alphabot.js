@@ -1,6 +1,8 @@
 'use strict';
 
+//  Include this project's package.json so we can access version info
 const pjson = require('./package.json');
+
 const { Client, Intents } = require("discord.js");
 const fs = require('fs');
 const { Console } = require('console');
@@ -13,7 +15,10 @@ require('console-stamp')(console, {
 //  The Discord client, see intent docs: https://discord.com/developers/docs/topics/gateway#list-of-intents
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES] });
 
+//  An array of guild IDs that the bot will connect to
 const guilds = ['892906237799321650', '191716294943440897'];  //  test server, IL
+
+//  The ID for the IL guild - this is kind of a hack
 let il_guild = undefined;
 
 const commandPrefixes = '&!';
@@ -30,8 +35,7 @@ for (let i = 0; i < available.length; i++) {
 
 const help = '**Available commands**:' + '\n(put a & in the beginning to address the bot)\n' + '\n__slot N__ sign up to play slot N in the next raid\n__slot clear__ clear a slot that you\'ve signed up for\n__slots__ list the signups for the next raid\n';
 
-const raidNights = [1, 3, 5]; // Mon Wed Fri 
-//const nextRaid = {0: 1, 1: 3, 2: 3, 3: 5, 4: 5, 5: 1, 6: 1};
+const raidNights = [1, 3, 5]; // Mon Wed Fri
 const dayNames = {1: 'Monday', 3: 'Wednesday', 5: 'Friday'};
 const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:' ];
 
@@ -108,7 +112,10 @@ function nextRaid(day) {
  * @returns The raid day to sign up for
  */
 function raidDate(specDay) {
-    const date = new Date();
+    //  Get date/time in the America/New_York timezone, which accounts for EST/EDT
+    const dateStr = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+    const date = new Date(dateStr);
+    
     const currentHour = date.getHours();
     const currentDay = date.getDay();
 
@@ -413,6 +420,7 @@ client.on("ready", () => {
     il_guild = client.guilds.cache.get('191716294943440897');
 });
 
+//  Check whether the module has been run from the command line or imported into another module
 if(require.main == module) {
     //  This module has been run on the command line, proceed to log in and execute the bot
 

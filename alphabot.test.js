@@ -1,4 +1,3 @@
-//import {jest} from '@jest/globals'
 var alphabot = require('./alphabot.js');
 
 describe('daySpec', () => {
