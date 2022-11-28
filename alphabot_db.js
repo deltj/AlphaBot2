@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = { userIsSignedUp, slotIsTaken };
+module.exports = { initDb, initSlots, userIsSignedUp, slotIsTaken };
 
 /*const sqlite3 = require('sqlite3').verbose();
 
@@ -35,6 +35,44 @@ db.close((err) => {
     console.log('Closed the database connection.');
 });
 */
+
+/**
+ * Create tables for the AlphaBot database
+ * @param {*} db The SQLite database to use
+ */
+function initDb(db) {
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.run('CREATE TABLE IF NOT EXISTS signups (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, discord_user TEXT, raid_date TEXT, slot INTEGER)');
+            db.run('CREATE TABLE IF NOT EXISTS slots (id INTEGER PRIMARY KEY, desc TEXT)');
+
+            resolve();
+        });
+    });
+}
+
+/**
+ * Initialize raid slots in a default 5/5/2 configuration.
+ * @param {*} db The SQLite database to use
+ */
+function initSlots(db) {
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [1, 'DD']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [2, 'DD']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [3, 'DD']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [4, 'DD']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [5, 'DD']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [6, 'Healer']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [7, 'Healer']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [8, 'Healer']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [9, 'Healer']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [10, 'Healer']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [11, 'Support']);
+            db.run('INSERT INTO slots (id, desc) VALUES (?, ?)', [12, 'Support']);
+        });
+    });
+}
 
 /**
  * Checks whether the specified user is signed up for the specified raid date.
