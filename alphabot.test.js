@@ -76,72 +76,72 @@ describe('raidDate', () => {
         const testDate = new Date('02 Jan 2022 13:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate();
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate().getDay();
+        expect(raidDay).toBe(1);
     });
 
     test('Sunday, spec=1', () => {
         const testDate = new Date('02 Jan 2022 13:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(1);
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate(1).getDay();
+        expect(raidDay).toBe(1);
     });
 
     test('Monday, before cutoff', () => {
         const testDate = new Date('03 Jan 2022 19:59:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate();
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate().getDay();
+        expect(raidDay).toBe(1);
     });
 
     test('Monday, after cutoff', () => {
         const testDate = new Date('03 Jan 2022 23:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate();
-        expect(output).toBe(3);
+        const raidDay = alphabot.raidDate().getDay();
+        expect(raidDay).toBe(3);
     });
 
     test('Monday, spec=1, before cutoff', () => {
         const testDate = new Date('03 Jan 2022 19:59:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(1);
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate(1).getDay();
+        expect(raidDay).toBe(1);
     });
 
     test('Monday, spec=1, after cutoff', () => {
         const testDate = new Date('03 Jan 2022 23:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(1);
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate(1).getDay();
+        expect(raidDay).toBe(1);
     });
 
     test('Tuesday', () => {
         const testDate = new Date('04 Jan 2022 13:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate();
-        expect(output).toBe(3);
+        const raidDay = alphabot.raidDate().getDay();
+        expect(raidDay).toBe(3);
     });
 
     test('Wednesday, spec=3, before cutoff', () => {
         const testDate = new Date('05 Jan 2022 19:59:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(3);
-        expect(output).toBe(3);
+        const raidDay = alphabot.raidDate(3).getDay();
+        expect(raidDay).toBe(3);
     });
 
     test('Wednesday, spec=3, after cutoff', () => {
         const testDate = new Date('05 Jan 2022 22:00:00 EST');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(3);
-        expect(output).toBe(3);
+        const raidDay = alphabot.raidDate(3).getDay();
+        expect(raidDay).toBe(3);
     });
 
     //  Bug hunting...
@@ -149,8 +149,8 @@ describe('raidDate', () => {
         const testDate = new Date('08 Aug 2022 23:44:00 EDT');
         jest.setSystemTime(testDate);
 
-        const output = alphabot.raidDate(1);
-        expect(output).toBe(1);
+        const raidDay = alphabot.raidDate(1).getDay();
+        expect(raidDay).toBe(1);
     });
 });
 

@@ -4,6 +4,7 @@ const pjson = require('./package.json');
 const { Client, Intents } = require("discord.js");
 const fs = require('fs');
 const { Console } = require('console');
+const schedule = require('node-schedule');
 
 //  Add timestamps to console.log output
 require('console-stamp')(console, {
@@ -28,11 +29,17 @@ for (let i = 0; i < available.length; i++) {
     slotlist += (i + 1) + '. ' + available[i] + '\n';
 }
 
-const help = '**Available commands**:' + '\n(put a & in the beginning to address the bot)\n' + '\n__slot N__ sign up to play slot N in the next raid\n__slot clear__ clear a slot that you\'ve signed up for\n__slots__ list the signups for the next raid\n';
+const help = '**Available commands**:' +
+    '\n(bot commands must begin with & or !)\n' +
+    '\n__slot N__ sign up to play slot N in the next raid' +
+    '\n__slot clear__ clear a slot that you\'ve signed up for' +
+    '\n__slots__ list the signups for the next raid' +
+    '\n__info N__ print build info for slot N' +
+    '\n__ver__ print current bot software version';
 
-const raidNights = [1, 3, 5]; // Mon Wed Fri 
-//const nextRaid = {0: 1, 1: 3, 2: 3, 3: 5, 4: 5, 5: 1, 6: 1};
-const dayNames = {1: 'Monday', 3: 'Wednesday', 5: 'Friday'};
+const raidNights = [1, 3, 5]; // Mon Wed Fri
+const raidHour = 20; // 8pm EST
+const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:' ];
 
 /**
@@ -78,6 +85,58 @@ function face() {
 }
 
 /**
+ * Clear signups for the specified day
+ * @param {*} day 
+ */
+function clearRaid(day) {
+    if(raidNights.includes(day)) {
+        console.log('Clearing signups for ' + dayNames[day]);
+
+        //  Overwrite the file with an empty string
+        fs.writeFileSync(filePrefix + 'slots_' + day + '.log', '', (err) => { 
+            if (err) throw err;
+        });
+    }
+}
+
+/**
+ * Print some info about the specified raid
+ * @param {*} day 
+ * @returns A string with info about the specified raid
+ */
+function raidInfo(day) {
+    const currentDate = new Date();
+    const nextRaidDate = raidDate();
+    const nextRaidDayStr = nextRaidDate.getDay() == currentDate.getDay() ? 'Today' : dayNames[nextRaidDate.getDay()];
+    const msTillNextRaid = nextRaidDate - currentDate;
+    const hoursTillNextRaid = Math.floor(msTillNextRaid / 3.6e6);
+    const minsTilNextRaid = Math.floor((msTillNextRaid % 3.6e6) / 6e4);
+
+    //  Count signups
+    let taken = fs.readFileSync(filePrefix + 'slots_' + nextRaidDate.getDay() + '.log').toString().trim().split('\n').filter(Boolean);
+    const numSignups = taken.length;
+
+    let raidInfo = 'Next raid is: ' + nextRaidDayStr + ' at 8PM Eastern time ';
+
+    if(hoursTillNextRaid > 0) {
+        //  More than 1 hour till raid
+        raidInfo += '(' + hoursTillNextRaid + ' hour' + (hoursTillNextRaid > 1 ? 's, ' : ', ') +
+        minsTilNextRaid + ' minute' + (minsTilNextRaid > 1 ? 's' : '') + ' from now)';
+    } else if(hoursTillNextRaid == 0 && minsTilNextRaid > 0) {
+        //  Less than 1 hour till raid
+        raidInfo += '(' + minsTilNextRaid + ' minute' + (minsTilNextRaid > 1 ? 's' : '') + ' from now)';
+    }
+    
+    raidInfo += '\nThere are ' + numSignups + ' signups\n';
+
+    if(numSignups < 8) {
+        raidInfo += '\nSignups are **weak**!';
+    }
+    
+    return raidInfo;
+}
+
+/**
  * Given a day of the week (0-6), determine the next raid day
  * @param {*} day 
  */
@@ -94,7 +153,7 @@ function nextRaid(day) {
 }
 
 /**
- * Determine the raid signup day.  This function should behave as follows:
+ * Determine the raid signup date.  This function should behave as follows:
  * 
  * If no day is provided:
  *  -If today is a raid day and it's before the cutoff time, sign up for today
@@ -105,28 +164,38 @@ function nextRaid(day) {
  *  -Otherwise, sign up for the next raid
  * 
  * @param {*} specDate A day of the week provided by the user (0-6)
- * @returns The raid day to sign up for
+ * @returns {Date} A date object for the date/time of the raid
  */
 function raidDate(specDay) {
-    const date = new Date();
-    const currentHour = date.getHours();
-    const currentDay = date.getDay();
+    const currentDate = new Date();
+    const currentHour = currentDate.getHours();
+    const currentDay = currentDate.getDay();
+
+    let raidDate = new Date();
+    raidDate.setHours(raidHour, 0, 0, 0);
 
     //  If the user provided a valid day of the week, try to process that
     if (0 <= specDay && specDay <= 6) {
         if (raidNights.includes(specDay)) {
-            return specDay;
+            //return specDay;
+            raidDate.setDate(raidDate.getDate() + (specDay - currentDay));
+            return raidDate;
         } else {
-            return nextRaid(specDay);
+            //return nextRaid(specDay);
+            raidDate.setDate(raidDate.getDate() + (nextRaid(specDay) - currentDay));
+            return raidDate;
         }
     }
 
     //  If there is a raid today and it's before the cutoff, use today
     if (raidNights.includes(currentDay) && currentHour < raidSignupCutoffHour) {
-        return currentDay;
+        //return currentDay;
+        return raidDate
     } else {
-        return nextRaid(currentDay);
-    }    
+        //return nextRaid(currentDay);
+        raidDate.setDate(raidDate.getDate() + (nextRaid(currentDay) - currentDay));
+        return raidDate;
+    }
 }
 
 /**
@@ -348,10 +417,10 @@ async function processCommand(message) {
             //  Respond to slot command
             else if (text.includes('slot')) {            
                 const specDate = daySpec(text);
-                const day = raidDate(specDate);
+                const raidDay = raidDate(specDate).getDay();
                 const slot = parseInt(text.substring(text.indexOf('slot') + 4)) || 0;
 
-                channel.send(signupForSlot(nickname, day, slot, text.includes('clear')));
+                channel.send(signupForSlot(nickname, raidDay, slot, text.includes('clear')));
             }
 
             //  Respond to info command
@@ -368,7 +437,19 @@ async function processCommand(message) {
 
             //  Respond to version command
             else if (text.includes('ver')) {
-                channel.send('I am AlphaBot version ' + pjson.version + '.  Details here: https://github.com/deltj/AlphaBot2');
+                channel.send('I am AlphaBot version ' + pjson.version + '\nDetails here: https://github.com/deltj/AlphaBot2');
+            }
+
+            //  Respond to time command
+            else if (text.includes('time')) {
+                const response = 'Time on the bot system is: ' + new Date().toLocaleString('en-US');
+                channel.send(response);
+            }
+
+            //  Respond to the raid command
+            else if (text.includes('raid')) {
+                const response = raidInfo();
+                channel.send(response);
             }
 
             else {
@@ -426,6 +507,28 @@ if(require.main == module) {
 
     //  Log into discord using the token
     client.login(discordToken);
+
+    //  Schedule raid info display
+    /*
+    schedule.scheduleJob('0 18,19 * * 1', () => {
+        console.log('Posting raid info');
+        const info = raidInfo(1);
+        let channel = client.channels.cache.get('667529156212293664');
+        channel.send(info);
+    });
+    */    
+    schedule.scheduleJob('0 23 * * 1', () => {
+        clearRaid(1);
+    });
+    
+    schedule.scheduleJob('0 23 * * 3', () => {
+        clearRaid(3);
+    });
+
+    schedule.scheduleJob('0 23 * * 5', () => {
+        clearRaid(5);
+    });
+    
 } else {
     //  This module has not been run from the command line (probably required from a unit test), export some key functions
     module.exports = { daySpec, raidDate, nextRaid };
