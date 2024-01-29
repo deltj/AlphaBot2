@@ -1,19 +1,13 @@
-# Use latest node.js LTS
-FROM node:16
+FROM node:latest
 
-# Create app directory
-WORKDIR /usr/src/AlphaBot2
+WORKDIR /opt/AlphaBot2
 
-# Install app dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --no-optional && npm cache clean --force
 
-# Bundle app source
+WORKDIR /opt/AlphaBot2/app
 COPY . .
 
-# Create alphabot user/group
-RUN groupadd -r alphabot && useradd -r -g alphabot alphabot
-
-# Define the command to run the app
+#RUN groupadd -r alphabot && useradd -r -g alphabot alphabot
 #USER alphabot:alphabot
 CMD [ "node", "alphabot.js" ]

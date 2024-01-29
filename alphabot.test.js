@@ -89,7 +89,7 @@ describe('raidDate', () => {
     });
 
     test('Monday, before cutoff', () => {
-        const testDate = new Date('03 Jan 2022 19:59:00 EST');
+        const testDate = new Date('03 Jan 2022 22:29:00 EST');
         jest.setSystemTime(testDate);
 
         const raidDay = alphabot.raidDate().getDay();
@@ -97,7 +97,7 @@ describe('raidDate', () => {
     });
 
     test('Monday, after cutoff', () => {
-        const testDate = new Date('03 Jan 2022 23:00:00 EST');
+        const testDate = new Date('03 Jan 2022 22:30:00 EST');
         jest.setSystemTime(testDate);
 
         const raidDay = alphabot.raidDate().getDay();

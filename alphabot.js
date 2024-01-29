@@ -38,16 +38,18 @@ const help = '**Available commands**:' +
     '\n__ver__ print current bot software version';
 
 const raidNights = [1, 3, 5]; // Mon Wed Fri
-const raidHour = 20; // 8pm EST
+const raidHour = 20;
+const raidMin  = 30; 
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:' ];
+const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:', ':nauseated_face:', ':yawning_face:', ':smiling_face_with_tear'];
 
 /**
  * Signups received after this hour on raid night will go to the next raid.  This 
  * value used to be set to raid start time (currently 20:00 EST), but that doesn't
  * allow for folks to sign up who are running late or joining at the last minute.
  */
-const raidSignupCutoffHour = 23;
+const raidSignupCutoffHour = 22;
+const raidSignupCutoffMin  = 30;
 
 //  Create raid slot files if they're missing
 for(var i=0; i<raidNights.length; i++) {
@@ -116,7 +118,8 @@ function raidInfo(day) {
     let taken = fs.readFileSync(filePrefix + 'slots_' + nextRaidDate.getDay() + '.log').toString().trim().split('\n').filter(Boolean);
     const numSignups = taken.length;
 
-    let raidInfo = 'Next raid is: ' + nextRaidDayStr + ' at 8PM Eastern time ';
+    let dispRaidHour = raidHour > 12 ? raidHour - 12 : raidHour;
+    let raidInfo = 'Next raid is: ' + nextRaidDayStr + ' at ' + dispRaidHour + ':' + raidMin + ' PM Eastern time ';
 
     if(hoursTillNextRaid > 0) {
         //  More than 1 hour till raid
@@ -168,11 +171,12 @@ function nextRaid(day) {
  */
 function raidDate(specDay) {
     const currentDate = new Date();
-    const currentHour = currentDate.getHours();
     const currentDay = currentDate.getDay();
+    const currentHour = currentDate.getHours();
+    const currentMin = currentDate.getMinutes();
 
     let raidDate = new Date();
-    raidDate.setHours(raidHour, 0, 0, 0);
+    raidDate.setHours(raidHour, raidMin, 0, 0);
 
     //  If the user provided a valid day of the week, try to process that
     if (0 <= specDay && specDay <= 6) {
@@ -188,9 +192,9 @@ function raidDate(specDay) {
     }
 
     //  If there is a raid today and it's before the cutoff, use today
-    if (raidNights.includes(currentDay) && currentHour < raidSignupCutoffHour) {
+    if (raidNights.includes(currentDay) && currentHour <= raidSignupCutoffHour && currentMin < raidSignupCutoffMin) {
         //return currentDay;
-        return raidDate
+        return raidDate;
     } else {
         //return nextRaid(currentDay);
         raidDate.setDate(raidDate.getDate() + (nextRaid(currentDay) - currentDay));
