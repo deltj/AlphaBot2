@@ -192,7 +192,7 @@ function raidDate(specDay) {
     }
 
     //  If there is a raid today and it's before the cutoff, use today
-    if (raidNights.includes(currentDay) && currentHour <= raidSignupCutoffHour && currentMin < raidSignupCutoffMin) {
+    if (raidNights.includes(currentDay) && ((currentHour < raidSignupCutoffHour) || (currentHour == raidSignupCutoffHour && currentMin < raidSignupCutoffMin))) {
         //return currentDay;
         return raidDate;
     } else {
