@@ -15,19 +15,16 @@ require('console-stamp')(console, {
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES] });
 
 const guilds = ['892906237799321650', '191716294943440897'];  //  test server, IL
+let test_guild = undefined;
 let il_guild = undefined;
+let testMode = false;  //  If true, only respond to messages from the test server
 
 const commandPrefixes = '&!';
 const filePrefix = '/var/db/AlphaBot2/';
-const available = fs.readFileSync(filePrefix + 'slots.txt').toString().trim().split('\n').filter(Boolean);
+const slots = fs.readFileSync(filePrefix + 'slots.txt').toString().trim().split('\n').filter(Boolean);
 
 //  Read discord API key from the environment
 const discordToken = process.env.DISCORD_TOKEN;
-
-var slotlist = 'The **Alpha Squad** slots are:\n';
-for (let i = 0; i < available.length; i++) {
-    slotlist += (i + 1) + '. ' + available[i] + '\n';
-}
 
 const help = '**Available commands**:' +
     '\n(bot commands must begin with & or !)\n' +
@@ -41,7 +38,7 @@ const raidNights = [1, 3, 5]; // Mon Wed Fri
 const raidHour = 20;
 const raidMin  = 30; 
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:', ':nauseated_face:', ':yawning_face:', ':smiling_face_with_tear'];
+const faces = [':slight_smile:', ':nerd:', ':star_struck:', ':rolling_eyes:', ':grimacing:', ':upside_down:', ':expressionless:', ':flushed:', ':partying_face:', ':nauseated_face:', ':yawning_face:', ':smiling_face_with_tear:'];
 
 /**
  * Signups received after this hour on raid night will go to the next raid.  This 
@@ -320,12 +317,12 @@ function signupForSlot(nick, day, slot, clear) {
         return 'Your sign-up for slot ' + (prev + 1) + ' on ' + dayNames[day] + ' has been cleared, ' + nick;
     }
 
-    var show = available.length;
+    var show = slots.length;
     if (slot < 1) { // display slots
         resp = 'The raid slots for ' + dayNames[day] + ' are:\n\n';
 
         for (let i = 0; i < show; i++) {
-            resp += (i + 1) + '. ' + available[i];
+            resp += (i + 1) + '. ' + slots[i];
             if (i in mapping) {
                 resp += ' **' + mapping[i] + '**';
             } else {
@@ -346,17 +343,17 @@ function signupForSlot(nick, day, slot, clear) {
 
             var signupText = 'You are now signed up for slot ' + slot + ' on ' + dayNames[day] + ', ' + nick + ' ' + face();
 
-            const slotChannelName = 'slot-' + slot;
+            //const slotChannelName = 'slot-' + slot;
             //console.log(slotChannelName);
-            const slotChannel = il_guild.channels.cache.find(channel => channel.name === slotChannelName);
+            //const slotChannel = il_guild.channels.cache.find(channel => channel.name === slotChannelName);
             //console.log(slotChannel);
-            if(slotChannel) {
-                signupText += '\n\nSlot discussion: ' + slotChannel.toString();
-            }
+            //if(slotChannel) {
+            //    signupText += '\n\nSlot discussion: ' + slotChannel.toString();
+            //}
 
-            if(slotBuildLink[slot].length > 0) {
-                signupText += '\nSlot build: ' + slotBuildLink[slot];
-            }
+            //if(slotBuildLink[slot].length > 0) {
+            //    signupText += '\nSlot build: ' + slotBuildLink[slot];
+            //}
 
             return  signupText;
                 
@@ -381,9 +378,9 @@ function signupForSlot(nick, day, slot, clear) {
             signupText += '\n\nSlot discussion: ' + slotChannel.toString();
         }
 
-        if(slotBuildLink[slot].length > 0) {
-            signupText += '\nSlot build: ' + slotBuildLink[slot];
-        }
+        //if(slotBuildLink[slot].length > 0) {
+        //    signupText += '\nSlot build: ' + slotBuildLink[slot];
+        //}
 
         return signupText;
     }
@@ -475,15 +472,18 @@ client.on("messageCreate", (message) => {
 
     //  Only handle messages from configured guilds
     if (guilds.indexOf(message.guild.id) > -1) {
-
-        //  Handle commands
-        if (commandPrefixes.includes(message.content.trim().at(0))) {
-            processCommand(message);
-        }
-    
-        //  Handle Alpaca messages 
-        else {
-            alpaca(message); // for Ags
+        if (testMode && message.guild.id != test_guild) {
+            console.log('Ignoring message from ' + message.guild.name + ' because test mode is enabled');
+        } else {
+            //  Handle commands
+            if (commandPrefixes.includes(message.content.trim().at(0))) {
+                processCommand(message);
+            }
+        
+            //  Handle Alpaca messages 
+            else {
+                alpaca(message); // for Ags
+            }
         }
     }
 });
@@ -496,6 +496,7 @@ client.on("ready", () => {
     });
 
     il_guild = client.guilds.cache.get('191716294943440897');
+    test_guild = client.guilds.cache.get('892906237799321650');
 });
 
 if(require.main == module) {
@@ -507,10 +508,14 @@ if(require.main == module) {
         process.exit(0);
     }
 
-    console.log(discordToken);
+    //console.log(discordToken);
 
     //  Log into discord using the token
     client.login(discordToken);
+
+    if (testMode) {
+        console.log('Test mode is ON - only responding to messages from the test server');
+    }
 
     //  Schedule raid info display
     /*
